@@ -3,10 +3,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Construct Guardian — Assessment Attack Agent",
-  description: "A clean MVP foundation for assessment stress-testing.",
-  other: {
-    "codex-preview": "development",
-  },
+  description: "Red-team an assessment, detect construct bypass, apply the smallest repair, and re-attack.",
   icons: {
     icon: "/favicon.svg",
     shortcut: "/favicon.svg",

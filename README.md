@@ -2,7 +2,26 @@
 
 Clean MVP project foundation. Functional implementation is intentionally paused until the implementation specification is provided and approved.
 
-Scope lock: no authentication, database, dashboards, integrations, speculative features, or agent workflow implementation.
+Scope lock: no authentication, database, dashboards, integrations, or speculative features.
+
+## Run locally
+
+```bash
+npm run dev
+```
+
+Run the automated core tests with `npm test`.
+
+## Implemented MVP architecture
+
+- `lib/guardian.ts`: typed contracts, construct model, three attack strategies,
+  deterministic scoring, repair, exact-strategy re-attack, and guarded state machine.
+- `app/guardian-app.tsx`: one-page working surface with Golden Demo, Before/After,
+  failures, and a complete trace panel.
+- `tests/guardian.test.ts`: deterministic core and orchestration tests.
+
+The agent intelligence is currently a deterministic local simulator behind
+separable functions. External LLM and Strands agent adapters are intentionally deferred.
 
 ## Starter details
 
