@@ -20,8 +20,14 @@ Run the automated core tests with `npm test`.
   failures, and a complete trace panel.
 - `tests/guardian.test.ts`: deterministic core and orchestration tests.
 
-The agent intelligence is currently a deterministic local simulator behind
-separable functions. External LLM and Strands agent adapters are intentionally deferred.
+The Construct Analyst now uses a server-side Strands Agent with Amazon Bedrock
+and validated structured output. It falls back automatically to the deterministic
+analyst and records provenance in the existing trace. Attack, scoring, repair,
+and re-attack stages remain deterministic simulations.
+
+Copy `.env.example` to `.env.local` and provide AWS credentials through the
+standard AWS credential chain. `BEDROCK_MODEL_ID` changes the Bedrock model
+without modifying domain logic.
 
 ## Starter details
 

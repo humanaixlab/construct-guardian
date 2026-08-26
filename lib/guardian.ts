@@ -9,7 +9,8 @@ export type RequirementAttempt = { requirementId: string; requirement: string; e
 export type RepairRequirement = { id: string; requirement: string; evidenceIds: string[]; humanOnly: boolean };
 export type AttackResult = AttackStrategy & { bypassedEvidenceIds: string[]; humanEvidenceRetained: number; bypassScore: number; bypassDetected: boolean; requirementAttempts: RequirementAttempt[]; blockedByHumanOnlyRequirement: boolean };
 export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; requirements: RepairRequirement[]; rationale: string };
-export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS };
+export type AnalystProvenance = { provider: "STRANDS_BEDROCK" | "DETERMINISTIC_FALLBACK"; fallbackReason?: string };
+export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; analyst: AnalystProvenance; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS };
 
 export const THRESHOLDS = { highQuality: 0.75, substantialBypass: 0.5 } as const;
 export const GOLDEN_DEMO: AssessmentInput = {
@@ -83,17 +84,17 @@ export function reattack(model: ConstructModel, original: AttackResult, repair: 
   const blockedByHumanOnlyRequirement = requirementAttempts.some((attempt) => attempt.status === "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
   return { ...baseline, requirementAttempts, blockedByHumanOnlyRequirement, bypassDetected: baseline.bypassDetected && !blockedByHumanOnlyRequirement };
 }
-export function runGuardian(input: AssessmentInput): GuardianRun {
+export function runGuardian(input: AssessmentInput, suppliedConstruct?: ConstructModel, analyst: AnalystProvenance = { provider: "DETERMINISTIC_FALLBACK", fallbackReason: "Deterministic direct execution." }): GuardianRun {
   const states: WorkflowState[] = ["INGESTED"];
-  const construct = buildConstructModel(input); states.push(transition(states.at(-1)!, "CONSTRUCT_MODELED"));
+  const construct = suppliedConstruct ?? buildConstructModel(input); assertWeights(construct); states.push(transition(states.at(-1)!, "CONSTRUCT_MODELED"));
   const attacks = executeAttacks(construct); states.push(transition(states.at(-1)!, "ATTACK_EXECUTED"));
   const successfulAttack = [...attacks].filter((attack) => attack.bypassDetected).sort((a, b) => b.bypassScore - a.bypassScore)[0] ?? null;
   states.push(transition(states.at(-1)!, successfulAttack ? "BYPASS_CONFIRMED" : "NO_BYPASS"));
-  if (!successfulAttack) return { input, construct, attacks, successfulAttack, repair: null, reattack: null, states, thresholds: THRESHOLDS };
+  if (!successfulAttack) return { input, construct, analyst, attacks, successfulAttack, repair: null, reattack: null, states, thresholds: THRESHOLDS };
   const repair = proposeRepair(input, construct, successfulAttack); states.push(transition(states.at(-1)!, "REPAIR_PROPOSED"));
   const repeatedAttack = reattack(construct, successfulAttack, repair); states.push(transition(states.at(-1)!, "REATTACKED"));
   states.push(transition(states.at(-1)!, repeatedAttack.bypassDetected ? "STILL_VULNERABLE" : "BYPASS_CLOSED"));
-  return { input, construct, attacks, successfulAttack, repair, reattack: repeatedAttack, states, thresholds: THRESHOLDS };
+  return { input, construct, analyst, attacks, successfulAttack, repair, reattack: repeatedAttack, states, thresholds: THRESHOLDS };
 }
 export const toPercent = (value: number) => `${Math.round(value * 100)}%`;
 export function percentageTrace(run: GuardianRun) {

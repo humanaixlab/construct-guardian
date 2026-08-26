@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { GOLDEN_DEMO, runGuardian, toPercent, type AssessmentInput, type AttackResult } from "@/lib/guardian";
+import type { ConstructAnalysis } from "@/lib/construct/analyst";
 
 const labels: Record<string, string> = { INGESTED: "Input received", CONSTRUCT_MODELED: "Construct modeled", ATTACK_EXECUTED: "Attack executed", BYPASS_CONFIRMED: "Bypass confirmed", NO_BYPASS: "No bypass", REPAIR_PROPOSED: "Repair proposed", REATTACKED: "Re-attacked", BYPASS_CLOSED: "Bypass closed", STILL_VULNERABLE: "Still vulnerable" };
 function Metric({ label, value, tone = "ink" }: { label: string; value: string; tone?: "ink" | "danger" | "safe" }) { return <div className={`metric metric-${tone}`}><span>{label}</span><strong>{value}</strong></div>; }
@@ -15,7 +16,19 @@ function EvidenceMap({ attack, run }: { attack: AttackResult; run: ReturnType<ty
 export default function GuardianApp() {
   const [input, setInput] = useState<AssessmentInput>(GOLDEN_DEMO); const [run, setRun] = useState<ReturnType<typeof runGuardian> | null>(null); const [error, setError] = useState<string | null>(null); const [running, setRunning] = useState(false);
   const vulnerable = useMemo(() => run?.successfulAttack?.bypassedEvidenceIds.map((id) => run.construct.requiredEvidence.find((e) => e.id === id)?.label).filter(Boolean) ?? [], [run]);
-  function attack() { setError(null); setRunning(true); setRun(null); window.setTimeout(() => { try { setRun(runGuardian(input)); } catch (cause) { setError(cause instanceof Error ? cause.message : "The workflow failed."); } finally { setRunning(false); } }, 650); }
+  async function attack() {
+    setError(null); setRunning(true); setRun(null);
+    try {
+      const response = await fetch("/api/analyze-construct", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(input) });
+      if (!response.ok) throw new Error(`Construct Analyst endpoint failed (${response.status}).`);
+      const analysis = await response.json() as ConstructAnalysis;
+      setRun(runGuardian(input, analysis.model, { provider: analysis.provider, fallbackReason: analysis.fallbackReason }));
+    } catch (cause) {
+      const reason = cause instanceof Error ? cause.message : "Construct Analyst endpoint unavailable.";
+      try { setRun(runGuardian(input, undefined, { provider: "DETERMINISTIC_FALLBACK", fallbackReason: reason })); }
+      catch (workflowError) { setError(workflowError instanceof Error ? workflowError.message : "The workflow failed."); }
+    } finally { setRunning(false); }
+  }
   return <main><header className="topbar"><div className="brand"><span className="brand-mark"><ShieldCheck size={19}/></span><div><b>Construct Guardian</b><small>Assessment Attack Agent</small></div></div><span className="mvp-tag">WORKING MVP</span></header>
     <section className="intro"><p className="eyebrow">RED-TEAM THE ASSESSMENT, NOT THE STUDENT</p><h1>Can AI earn the grade<br/>without proving the learning?</h1><p>Model the intended human evidence, attack the task, apply the smallest repair, and re-run the exact same attack.</p></section>
     <div className="workspace"><section className="input-panel"><div className="panel-title"><span>01</span><div><h2>Assessment input</h2><p>Golden Demo is loaded and ready.</p></div></div>
@@ -35,7 +48,7 @@ export default function GuardianApp() {
           {run.reattack && <div className={`verdict ${run.reattack.bypassDetected ? "danger-verdict" : "safe-verdict"}`}><p>RE-ATTACK RESULT</p><h2>{run.reattack.bypassDetected ? "STILL VULNERABLE" : "BYPASS CLOSED"}</h2>{run.reattack.blockedByHumanOnlyRequirement && <div className="blocked-banner"><AlertTriangle/><div><strong>BLOCKED_BY_HUMAN_ONLY_REQUIREMENT</strong><span>The exploit produced the submission but could not complete the live oral defense.</span></div></div>}<div className="metrics compact"><Metric label="Quality" value={toPercent(run.reattack.qualityScore)}/><Metric label="Evidence retained" value={toPercent(run.reattack.humanEvidenceRetained)} tone="safe"/><Metric label="Bypass" value={toPercent(run.reattack.bypassScore)} tone="safe"/></div></div>}
         </> : <div className="verdict safe-verdict"><p>ATTACK RESULT</p><h2>No construct bypass detected</h2><p>No strategy crossed both configured thresholds. Repair was not run.</p></div>}
         <Accordion type="single" collapsible className="trace-panel"><AccordionItem value="trace"><AccordionTrigger>INSPECT FULL TRACE</AccordionTrigger><AccordionContent>
-          <div className="trace-section"><h3>1 · Construct model</h3><pre>{JSON.stringify(run.construct, null, 2)}</pre></div>
+          <div className="trace-section"><h3>1 · Construct model</h3><p className="provenance"><strong>Construct Analyst:</strong> {run.analyst.provider === "STRANDS_BEDROCK" ? "Strands + Amazon Bedrock" : "Deterministic fallback"}</p>{run.analyst.fallbackReason && <p><strong>Fallback reason:</strong> {run.analyst.fallbackReason}</p>}<pre>{JSON.stringify(run.construct, null, 2)}</pre></div>
           <div className="trace-section"><h3>2 · All attack strategies</h3>{run.attacks.map((item) => <div className="trace-attack" key={item.id}><h4>{item.name} · quality {toPercent(item.qualityScore)}</h4><p>{item.aiRole}</p><EvidenceMap attack={item} run={run}/><details><summary>Simulated submission</summary><p>{item.simulatedSubmission}</p></details></div>)}</div>
           {run.successfulAttack && <div className="trace-section"><h3>3 · Successful attack selected</h3><p>Highest bypass among strategies crossing quality ≥ {toPercent(run.thresholds.highQuality)} and bypass ≥ {toPercent(run.thresholds.substantialBypass)}.</p><code>{run.successfulAttack.id}</code></div>}
           {run.repair && <div className="trace-section"><h3>4 · Repair</h3><pre>{JSON.stringify(run.repair, null, 2)}</pre></div>}
