@@ -4,8 +4,11 @@ export type EvidenceItem = { id: string; label: string; description: string; wei
 export type TaskStep = { id: string; action: string; demonstratesEvidenceIds: string[] };
 export type ConstructModel = { constructName: string; constructDescription: string; requiredEvidence: EvidenceItem[]; taskSteps: TaskStep[] };
 export type AttackStrategy = { id: string; name: string; aiRole: string; retainedEvidenceIds: string[]; qualityScore: number; simulatedSubmission: string };
-export type AttackResult = AttackStrategy & { bypassedEvidenceIds: string[]; humanEvidenceRetained: number; bypassScore: number; bypassDetected: boolean };
-export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; rationale: string };
+export type RequirementAttemptStatus = "COMPLETED_BY_ATTACK" | "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT";
+export type RequirementAttempt = { requirementId: string; requirement: string; evidenceIds: string[]; status: RequirementAttemptStatus; explanation: string };
+export type RepairRequirement = { id: string; requirement: string; evidenceIds: string[]; humanOnly: boolean };
+export type AttackResult = AttackStrategy & { bypassedEvidenceIds: string[]; humanEvidenceRetained: number; bypassScore: number; bypassDetected: boolean; requirementAttempts: RequirementAttempt[]; blockedByHumanOnlyRequirement: boolean };
+export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; requirements: RepairRequirement[]; rationale: string };
 export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS };
 
 export const THRESHOLDS = { highQuality: 0.75, substantialBypass: 0.5 } as const;
@@ -62,17 +65,23 @@ function strategyCatalog(): AttackStrategy[] { return [
 export function evaluateAttack(model: ConstructModel, strategy: AttackStrategy): AttackResult {
   const score = calculateEvidenceScore(model.requiredEvidence, strategy.retainedEvidenceIds);
   const bypassedEvidenceIds = model.requiredEvidence.filter((item) => !strategy.retainedEvidenceIds.includes(item.id)).map((item) => item.id);
-  return { ...strategy, ...score, bypassedEvidenceIds, bypassDetected: isBypass(strategy.qualityScore, score.bypassScore) };
+  const requirementAttempts: RequirementAttempt[] = model.taskSteps.map((step) => ({ requirementId: step.id, requirement: step.action, evidenceIds: step.demonstratesEvidenceIds, status: "COMPLETED_BY_ATTACK", explanation: "The AI-assisted strategy can produce an artifact satisfying this written task step." }));
+  return { ...strategy, ...score, bypassedEvidenceIds, requirementAttempts, blockedByHumanOnlyRequirement: false, bypassDetected: isBypass(strategy.qualityScore, score.bypassScore) };
 }
 export function executeAttacks(model: ConstructModel) { return strategyCatalog().map((strategy) => evaluateAttack(model, strategy)); }
 export function proposeRepair(input: AssessmentInput, model: ConstructModel, attack: AttackResult): Repair {
   if (!attack.bypassDetected) throw new Error("Repair requires a confirmed construct bypass.");
   const change = "Add a 4-minute oral evidence check: the student must defend one selected quotation, explain why it supports the named strategy, and respond to one alternative interpretation without notes.";
-  return { title: "Add a brief oral evidence check", change, repairedAssignment: `${input.assignmentPrompt}\n\n${change}`, protectedEvidenceIds: attack.bypassedEvidenceIds, rationale: `This preserves the assignment and adds direct performance evidence for ${attack.bypassedEvidenceIds.length} vulnerable construct components.` };
+  return { title: "Add a brief oral evidence check", change, repairedAssignment: `${input.assignmentPrompt}\n\n${change}`, protectedEvidenceIds: attack.bypassedEvidenceIds, requirements: [{ id: "oral-defense", requirement: "Complete a live 4-minute oral defense without notes: defend one quotation, justify the named strategy, and respond to an alternative interpretation.", evidenceIds: attack.bypassedEvidenceIds, humanOnly: true }], rationale: `This preserves the assignment and adds direct performance evidence for ${attack.bypassedEvidenceIds.length} vulnerable construct components.` };
 }
 export function reattack(model: ConstructModel, original: AttackResult, repair: Repair): AttackResult {
-  const retainedEvidenceIds = Array.from(new Set([...original.retainedEvidenceIds, ...repair.protectedEvidenceIds]));
-  return evaluateAttack(model, { ...original, retainedEvidenceIds, qualityScore: original.qualityScore, simulatedSubmission: `${original.simulatedSubmission} The same AI-generated submission is presented, but the student must now personally defend the evidence and reasoning during the oral check.` });
+  const baseline = evaluateAttack(model, { ...original, retainedEvidenceIds: original.retainedEvidenceIds, qualityScore: original.qualityScore, simulatedSubmission: `${original.simulatedSubmission} The same AI-generated submission is presented, then the same attack attempts every repaired requirement.` });
+  const repairAttempts: RequirementAttempt[] = repair.requirements.map((requirement) => requirement.humanOnly
+    ? { requirementId: requirement.id, requirement: requirement.requirement, evidenceIds: requirement.evidenceIds, status: "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT", explanation: "The strategy can generate the written submission, but it cannot perform a live, unaided human defense." }
+    : { requirementId: requirement.id, requirement: requirement.requirement, evidenceIds: requirement.evidenceIds, status: "COMPLETED_BY_ATTACK", explanation: "The strategy can satisfy this added requirement." });
+  const requirementAttempts = [...baseline.requirementAttempts, ...repairAttempts];
+  const blockedByHumanOnlyRequirement = requirementAttempts.some((attempt) => attempt.status === "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
+  return { ...baseline, requirementAttempts, blockedByHumanOnlyRequirement, bypassDetected: baseline.bypassDetected && !blockedByHumanOnlyRequirement };
 }
 export function runGuardian(input: AssessmentInput): GuardianRun {
   const states: WorkflowState[] = ["INGESTED"];

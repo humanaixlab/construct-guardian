@@ -40,6 +40,18 @@ test("re-attack uses the exact successful attack strategy", () => {
   assert.equal(run.reattack.qualityScore, run.successfulAttack.qualityScore);
 });
 
+test("full-generation is blocked by the oral evidence repair", () => {
+  const run = runGuardian(GOLDEN_DEMO);
+  assert.equal(run.successfulAttack?.id, "full-generation");
+  assert.equal(run.reattack?.id, "full-generation");
+  assert.equal(run.reattack?.blockedByHumanOnlyRequirement, true);
+  assert.equal(run.reattack?.requirementAttempts.find((attempt) => attempt.requirementId === "oral-defense")?.status, "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
+  assert.equal(run.reattack?.humanEvidenceRetained, 0);
+  assert.equal(run.reattack?.bypassScore, 1);
+  assert.equal(run.reattack?.bypassDetected, false);
+  assert.equal(run.states.at(-1), "BYPASS_CLOSED");
+});
+
 test("every evidence percentage has a traceable evidence source", () => {
   const run = runGuardian(GOLDEN_DEMO);
   for (const entry of percentageTrace(run)) {
