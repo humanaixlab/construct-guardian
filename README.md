@@ -1,6 +1,97 @@
 # Construct Guardian — Assessment Attack Agent
 
-Clean MVP project foundation. Functional implementation is intentionally paused until the implementation specification is provided and approved.
+Construct Guardian is a **pre-deployment assessment validity stress-testing
+tool** for teachers and course designers. It is used **before an assessment is
+given to students**, so the teacher can review and strengthen the assessment
+before releasing it.
+
+The primary inputs are:
+
+- Learning Outcome
+- Assignment Prompt
+- Rubric
+
+From these inputs, Construct Guardian models the intended construct—the
+capability the assessment is intended to measure—and the human evidence needed
+to support that construct. It then adversarially stress-tests whether
+AI-assisted strategies can satisfy the assessment while bypassing the required
+human evidence. When it detects a Construct Bypass, it proposes the smallest
+evidence-targeted repair and re-runs the exact same successful exploit against
+the repaired assessment.
+
+## Construct Bypass
+
+**Construct Bypass** is a product-specific operational term:
+
+> A condition in which an assessment can be successfully completed, often with
+> AI assistance, while bypassing the human evidence required to support the
+> intended learning construct.
+
+Construct Guardian does not present Construct Bypass as an established
+psychometric term.
+
+## Intended workflow
+
+`Learning Outcome + Assignment + Rubric → Construct & Human Evidence Model → Adversarial Assessment Stress Test → Construct Bypass Detection → Interactive Validity Report → Smallest Repair → Exact Re-Attack → Teacher Review → Deploy to Students`
+
+The teacher remains the decision-maker and reviews the strengthened assessment
+before it is deployed to students.
+
+## Interactive assessment-validity report
+
+The primary output is an **interactive assessment-validity report inside the
+application**. It is not a chatbot conversation and is not merely a
+downloadable file. The report contains:
+
+1. **Assessment Overview**
+   - Learning Outcome
+   - Assignment
+   - Rubric
+2. **Intended Construct**
+   - The capability the assessment is intended to measure
+3. **Required Human Evidence**
+   - Observable evidence that must originate from the learner
+   - Evidence weights and mappings where relevant
+4. **Adversarial Stress-Test Results**
+   - AI-assisted attack strategies tested
+   - Simulated submission quality
+   - Human evidence bypassed
+   - Whether a Construct Bypass was found
+5. **Construct Bypass Analysis**
+   - Exact vulnerable evidence
+   - Why the assessment can still appear successful
+   - Where the validity inference breaks
+6. **Smallest Repair**
+   - Repair mechanism
+   - Repair text
+   - Why it matches the lost evidence
+   - Why it is minimal
+   - Added student burden
+7. **Exact Re-Attack Result**
+   - The same successful exploit
+   - Before/after outcome
+   - Whether the exploit was blocked or remains viable
+8. **Trace / Why this result**
+   - Construct model
+   - Evidence mapping
+   - Attack identity
+   - Deterministic calculations
+   - Repair decision
+   - Re-attack outcome
+
+## What the current MVP is not
+
+The current MVP is not:
+
+- an AI detector
+- a plagiarism checker
+- a student-surveillance tool
+- a post-submission student-answer analyzer
+- a generic teacher chatbot
+
+Future versions may support file upload and automatic extraction, downloadable
+revised assessments, and PDF/report export. These capabilities are **not
+required for the current MVP**.
 
 Scope lock: no authentication, database, dashboards, integrations, or speculative features.
 

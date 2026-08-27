@@ -1,6 +1,12 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { GOLDEN_DEMO, assertWeights, buildConstructModel, calculateEvidenceScore, executeAttacks, percentageTrace, proposeRepair, runGuardian, transition } from "../lib/guardian.ts";
+import { GOLDEN_DEMO, assertWeights, buildConstructModel, calculateEvidenceScore, evaluateAttack, executeAttacks, percentageTrace, proposeRepair, reattack, runGuardian, transition, type AttackStrategy } from "../lib/guardian.ts";
+
+function bypassWith(model: ReturnType<typeof buildConstructModel>, retainedEvidenceIds: string[], confirmedForRepairSelection = false) {
+  const strategy: AttackStrategy = { id: "regression-strategy", name: "Regression strategy", aiRole: "Produces the written artifact.", retainedEvidenceIds, qualityScore: 0.95, simulatedSubmission: "A high-quality generated submission." };
+  const attack = evaluateAttack(model, strategy);
+  return confirmedForRepairSelection ? { ...attack, bypassDetected: true } : attack;
+}
 
 test("construct evidence weights sum to exactly one", () => {
   assert.equal(assertWeights(buildConstructModel(GOLDEN_DEMO)), 1);
@@ -40,16 +46,66 @@ test("re-attack uses the exact successful attack strategy", () => {
   assert.equal(run.reattack.qualityScore, run.successfulAttack.qualityScore);
 });
 
-test("full-generation is blocked by the oral evidence repair", () => {
+test("Golden Demo uses a constrained in-class response rather than defaulting to oral defense", () => {
   const run = runGuardian(GOLDEN_DEMO);
   assert.equal(run.successfulAttack?.id, "full-generation");
   assert.equal(run.reattack?.id, "full-generation");
+  assert.equal(run.repair?.repairMechanism, "CONSTRAINED_IN_CLASS_RESPONSE");
+  assert.notEqual(run.repair?.repairMechanism, "LIVE_ORAL_DEFENSE");
   assert.equal(run.reattack?.blockedByHumanOnlyRequirement, true);
-  assert.equal(run.reattack?.requirementAttempts.find((attempt) => attempt.requirementId === "oral-defense")?.status, "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
+  assert.equal(run.reattack?.requirementAttempts.find((attempt) => attempt.requirementId === "constrained-in-class-response")?.status, "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
   assert.equal(run.reattack?.humanEvidenceRetained, 0);
   assert.equal(run.reattack?.bypassScore, 1);
   assert.equal(run.reattack?.bypassDetected, false);
   assert.equal(run.states.at(-1), "BYPASS_CLOSED");
+});
+
+test("different lost-evidence patterns select different repair mechanisms", () => {
+  const model = buildConstructModel(GOLDEN_DEMO);
+  const selectionRepair = proposeRepair(GOLDEN_DEMO, model, bypassWith(model, ["identify", "justify", "alternative"], true));
+  const justificationRepair = proposeRepair(GOLDEN_DEMO, model, bypassWith(model, ["identify", "select", "alternative"], true));
+  assert.equal(selectionRepair.repairMechanism, "STUDENT_SELECTED_UNSEEN_EVIDENCE");
+  assert.equal(justificationRepair.repairMechanism, "SHORT_DECISION_JUSTIFICATION");
+  assert.notEqual(selectionRepair.repairMechanism, justificationRepair.repairMechanism);
+});
+
+test("oral defense is reserved for lost evidence that is itself live spoken performance", () => {
+  const model = buildConstructModel(GOLDEN_DEMO);
+  model.requiredEvidence[3] = { ...model.requiredEvidence[3], id: "spoken-response", label: "Live spoken response", description: "Student responds live through oral explanation." };
+  model.taskSteps[3] = { ...model.taskSteps[3], demonstratesEvidenceIds: ["spoken-response"] };
+  const repair = proposeRepair(GOLDEN_DEMO, model, bypassWith(model, ["identify", "select", "justify"], true));
+  assert.equal(repair.repairMechanism, "LIVE_ORAL_DEFENSE");
+  assert.equal(repair.humanOnlyRequirement, true);
+  assert.deepEqual(repair.lostEvidenceIds, ["spoken-response"]);
+});
+
+test("repair contract references exactly the bypassed evidence IDs", () => {
+  const model = buildConstructModel(GOLDEN_DEMO);
+  const attack = bypassWith(model, ["identify", "select"]);
+  const repair = proposeRepair(GOLDEN_DEMO, model, attack);
+  assert.deepEqual(repair.lostEvidenceIds, attack.bypassedEvidenceIds);
+  assert.deepEqual(repair.protectedEvidenceIds, attack.bypassedEvidenceIds);
+  assert.deepEqual(repair.requirements[0].evidenceIds, attack.bypassedEvidenceIds);
+  assert.match(repair.whyThisRepairFits, /lost evidence|missing evidence/i);
+});
+
+test("repair appends one bounded requirement instead of rewriting the assignment", () => {
+  const model = buildConstructModel(GOLDEN_DEMO);
+  const repair = proposeRepair(GOLDEN_DEMO, model, bypassWith(model, ["identify", "select", "alternative"], true));
+  assert.ok(repair.repairedAssignment.startsWith(`${GOLDEN_DEMO.assignmentPrompt}\n\n`));
+  assert.equal(repair.repairedAssignment, `${GOLDEN_DEMO.assignmentPrompt}\n\n${repair.repairText}`);
+  assert.match(repair.minimalityReason, /leaves the original prompt/);
+});
+
+test("human-only blocked status is emitted only for a human-only repair", () => {
+  const model = buildConstructModel(GOLDEN_DEMO);
+  const original = bypassWith(model, ["identify", "select"]);
+  const repair = proposeRepair(GOLDEN_DEMO, model, original);
+  const repeated = reattack(model, original, repair);
+  assert.equal(repair.humanOnlyRequirement, false);
+  assert.equal(repeated.blockedByHumanOnlyRequirement, false);
+  assert.equal(repeated.requirementAttempts.at(-1)?.status, "COMPLETED_BY_ATTACK");
+  assert.equal(repeated.bypassDetected, true);
 });
 
 test("every evidence percentage has a traceable evidence source", () => {

@@ -1,6 +1,7 @@
 {
   "name": "construct-guardian-assessment-agent",
   "version": "0.1.0",
+  "description": "A pre-deployment assessment validity stress-testing tool that helps teachers and course designers detect Construct Bypass, apply the smallest evidence-targeted repair, and re-run the same exploit before an assessment is released to students.",
   "private": true,
   "engines": {
     "node": ">=22.13.0"

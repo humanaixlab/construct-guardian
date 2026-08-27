@@ -8,7 +8,8 @@ export type RequirementAttemptStatus = "COMPLETED_BY_ATTACK" | "BLOCKED_BY_HUMAN
 export type RequirementAttempt = { requirementId: string; requirement: string; evidenceIds: string[]; status: RequirementAttemptStatus; explanation: string };
 export type RepairRequirement = { id: string; requirement: string; evidenceIds: string[]; humanOnly: boolean };
 export type AttackResult = AttackStrategy & { bypassedEvidenceIds: string[]; humanEvidenceRetained: number; bypassScore: number; bypassDetected: boolean; requirementAttempts: RequirementAttempt[]; blockedByHumanOnlyRequirement: boolean };
-export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; requirements: RepairRequirement[]; rationale: string };
+export type RepairMechanism = "STUDENT_SELECTED_UNSEEN_EVIDENCE" | "SHORT_DECISION_JUSTIFICATION" | "ANNOTATED_REASONING_ARTIFACT" | "ALTERNATIVE_INTERPRETATION_OR_COUNTEREXAMPLE" | "CONSTRAINED_IN_CLASS_RESPONSE" | "TRACKED_REVISION_WITH_RATIONALE" | "LIVE_ORAL_DEFENSE";
+export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; requirements: RepairRequirement[]; rationale: string; lostEvidenceIds: string[]; repairMechanism: RepairMechanism; repairText: string; whyThisRepairFits: string; minimalityReason: string; addedStudentBurden: string; humanOnlyRequirement: boolean };
 export type AnalystProvenance = { provider: "STRANDS_BEDROCK" | "DETERMINISTIC_FALLBACK"; fallbackReason?: string };
 export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; analyst: AnalystProvenance; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS };
 
@@ -72,8 +73,71 @@ export function evaluateAttack(model: ConstructModel, strategy: AttackStrategy):
 export function executeAttacks(model: ConstructModel) { return strategyCatalog().map((strategy) => evaluateAttack(model, strategy)); }
 export function proposeRepair(input: AssessmentInput, model: ConstructModel, attack: AttackResult): Repair {
   if (!attack.bypassDetected) throw new Error("Repair requires a confirmed construct bypass.");
-  const change = "Add a 4-minute oral evidence check: the student must defend one selected quotation, explain why it supports the named strategy, and respond to one alternative interpretation without notes.";
-  return { title: "Add a brief oral evidence check", change, repairedAssignment: `${input.assignmentPrompt}\n\n${change}`, protectedEvidenceIds: attack.bypassedEvidenceIds, requirements: [{ id: "oral-defense", requirement: "Complete a live 4-minute oral defense without notes: defend one quotation, justify the named strategy, and respond to an alternative interpretation.", evidenceIds: attack.bypassedEvidenceIds, humanOnly: true }], rationale: `This preserves the assignment and adds direct performance evidence for ${attack.bypassedEvidenceIds.length} vulnerable construct components.` };
+  const knownEvidenceIds = new Set(model.requiredEvidence.map((item) => item.id));
+  const lostEvidenceIds = [...new Set(attack.bypassedEvidenceIds)].filter((id) => knownEvidenceIds.has(id));
+  if (!lostEvidenceIds.length) throw new Error("Repair requires at least one bypassed evidence item from the Construct Model.");
+
+  const lost = new Set(lostEvidenceIds);
+  const lostItems = model.requiredEvidence.filter((item) => lost.has(item.id));
+  const evidenceText = lostItems.map((item) => `${item.id} ${item.label} ${item.description}`.toLowerCase()).join(" ");
+  const matches = (pattern: RegExp) => pattern.test(evidenceText);
+  const allLostEvidenceIsOral = lostItems.every((item) => /oral|spoken|speaking|pronunciation|presentation|respond live/.test(`${item.id} ${item.label} ${item.description}`.toLowerCase()));
+  let repairMechanism: RepairMechanism;
+  let title: string;
+  let repairText: string;
+  let whyThisRepairFits: string;
+  let addedStudentBurden: string;
+  let humanOnlyRequirement = false;
+
+  if (allLostEvidenceIsOral) {
+    repairMechanism = "LIVE_ORAL_DEFENSE";
+    title = "Add one brief live oral check";
+    repairText = "Complete a live 3-minute oral check addressing only the identified spoken-performance evidence.";
+    whyThisRepairFits = "The lost evidence is itself live spoken performance, so a brief oral check directly samples the same construct.";
+    addedStudentBurden = "One 3-minute oral check.";
+    humanOnlyRequirement = true;
+  } else if (lost.size === model.requiredEvidence.length) {
+    repairMechanism = "CONSTRAINED_IN_CLASS_RESPONSE";
+    title = "Add one constrained in-class evidence sample";
+    repairText = "After submission, complete one 8-minute in-class response to a newly supplied campaign excerpt: identify one strategy, select one quotation, justify the connection, and note one plausible alternative reading.";
+    whyThisRepairFits = "All required evidence was bypassed, so one compact unseen response restores an attributable sample across the complete evidence chain.";
+    addedStudentBurden = "One 8-minute in-class response.";
+    humanOnlyRequirement = true;
+  } else if (matches(/select|selection|choose|quotation|textual evidence/) && lost.size === 1) {
+    repairMechanism = "STUDENT_SELECTED_UNSEEN_EVIDENCE";
+    title = "Add one unseen evidence selection";
+    repairText = "Select one relevant quotation from a short excerpt released with the task and add one sentence explaining its relevance.";
+    whyThisRepairFits = "The missing evidence is independent evidence selection, which is observed directly through one new selection rather than a broader defense.";
+    addedStudentBurden = "One quotation and one sentence.";
+  } else if (matches(/justify|justification|explain why|reasoning|inference/) && lost.size === 1) {
+    repairMechanism = "SHORT_DECISION_JUSTIFICATION";
+    title = "Add one short decision justification";
+    repairText = "Add 2–3 sentences explaining why one selected quotation supports the named persuasive strategy rather than the closest competing label.";
+    whyThisRepairFits = "The bypass removed the evidence-to-strategy inference, so a focused justification restores that exact reasoning evidence.";
+    addedStudentBurden = "Two to three sentences.";
+  } else if (matches(/alternative|counterexample|counter-example|competing interpretation/) && lost.size === 1) {
+    repairMechanism = "ALTERNATIVE_INTERPRETATION_OR_COUNTEREXAMPLE";
+    title = "Add one alternative interpretation";
+    repairText = "State one plausible alternative interpretation of a chosen passage and give one sentence explaining why the preferred interpretation remains stronger.";
+    whyThisRepairFits = "The missing evidence is consideration of an alternative reading, so one bounded alternative directly restores it.";
+    addedStudentBurden = "One alternative and one comparison sentence.";
+  } else if (matches(/identify|identification|justify|justification|reasoning|inference/)) {
+    repairMechanism = "ANNOTATED_REASONING_ARTIFACT";
+    title = "Add a compact annotated reasoning trace";
+    repairText = "Attach one annotation linking a chosen passage to the strategy label and the inference used to reach that label; limit the annotation to 75 words.";
+    whyThisRepairFits = "The lost evidence spans an analytical decision and its reasoning, which one bounded annotation exposes without replacing the assignment.";
+    addedStudentBurden = "One annotation of no more than 75 words.";
+  } else {
+    repairMechanism = "TRACKED_REVISION_WITH_RATIONALE";
+    title = "Add one tracked revision with rationale";
+    repairText = "Revise one marked passage and append a 50-word rationale identifying what changed and which evidence informed the revision.";
+    whyThisRepairFits = "The remaining lost-evidence combination is best recovered through a small visible revision tied to the affected evidence.";
+    addedStudentBurden = "One revision and a rationale of no more than 50 words.";
+  }
+
+  const minimalityReason = "This appends one bounded evidence requirement and leaves the original prompt, rubric, and all other task components unchanged.";
+  const requirementId = repairMechanism.toLowerCase().replaceAll("_", "-");
+  return { title, change: repairText, repairedAssignment: `${input.assignmentPrompt}\n\n${repairText}`, protectedEvidenceIds: lostEvidenceIds, requirements: [{ id: requirementId, requirement: repairText, evidenceIds: lostEvidenceIds, humanOnly: humanOnlyRequirement }], rationale: whyThisRepairFits, lostEvidenceIds, repairMechanism, repairText, whyThisRepairFits, minimalityReason, addedStudentBurden, humanOnlyRequirement };
 }
 export function reattack(model: ConstructModel, original: AttackResult, repair: Repair): AttackResult {
   const baseline = evaluateAttack(model, { ...original, retainedEvidenceIds: original.retainedEvidenceIds, qualityScore: original.qualityScore, simulatedSubmission: `${original.simulatedSubmission} The same AI-generated submission is presented, then the same attack attempts every repaired requirement.` });

@@ -52,6 +52,7 @@ test("fallback preserves the complete Golden Demo", async () => {
   const result = await analyzeConstruct(GOLDEN_DEMO, provider("malformed"));
   const run = runGuardian(GOLDEN_DEMO, result.model, { provider: result.provider, fallbackReason: result.fallbackReason });
   assert.deepEqual(run.states, ["INGESTED", "CONSTRUCT_MODELED", "ATTACK_EXECUTED", "BYPASS_CONFIRMED", "REPAIR_PROPOSED", "REATTACKED", "BYPASS_CLOSED"]);
+  assert.equal(run.repair?.repairMechanism, "CONSTRAINED_IN_CLASS_RESPONSE");
   assert.equal(run.reattack?.requirementAttempts.at(-1)?.status, "BLOCKED_BY_HUMAN_ONLY_REQUIREMENT");
 });
 
