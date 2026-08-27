@@ -15,7 +15,7 @@ export type RepairMechanism = "STUDENT_SELECTED_UNSEEN_EVIDENCE" | "SHORT_DECISI
 export type Repair = { title: string; change: string; repairedAssignment: string; protectedEvidenceIds: string[]; requirements: RepairRequirement[]; rationale: string; lostEvidenceIds: string[]; targetedEvidenceIds: string[]; repairMechanism: RepairMechanism; repairText: string; whyThisRepairFits: string; minimalityReason: string; addedStudentBurden: string; humanOnlyRequirement: boolean; attackMechanismAddressed: string };
 export type StageProvenance = { provider: "STRANDS_BEDROCK" | "DETERMINISTIC_FALLBACK"; fallbackReason?: string };
 export type AnalystProvenance = StageProvenance;
-export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; analyst: AnalystProvenance; attacker: StageProvenance; quality: StageProvenance; repairAgent: StageProvenance | null; qualityEvaluations: QualityResult[]; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS };
+export type GuardianRun = { input: AssessmentInput; construct: ConstructModel; analyst: AnalystProvenance; attacker: StageProvenance; quality: StageProvenance; repairAgent: StageProvenance | null; qualityEvaluations: QualityResult[]; attacks: AttackResult[]; successfulAttack: AttackResult | null; repair: Repair | null; reattack: AttackResult | null; states: WorkflowState[]; thresholds: typeof THRESHOLDS; observability?: { provider: "AMAZON_BEDROCK_AGENTCORE" | "LOCAL_NOOP" } };
 
 export const THRESHOLDS = { highQuality: 0.75, substantialBypass: 0.5 } as const;
 export const GOLDEN_DEMO: AssessmentInput = {
