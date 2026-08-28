@@ -6,6 +6,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Progress } from "@/components/ui/progress";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { GOLDEN_DEMO, runGuardian, toPercent, type AssessmentInput, type AttackResult } from "@/lib/guardian";
+import { ASSESSMENT_EXAMPLES, getAssessmentExample, type AssessmentExampleId } from "@/lib/assessment-examples";
 
 const labels: Record<string, string> = { INGESTED: "Input received", CONSTRUCT_MODELED: "Construct modeled", ATTACK_EXECUTED: "Attack executed", BYPASS_CONFIRMED: "Bypass confirmed", NO_BYPASS: "No bypass", REPAIR_PROPOSED: "Repair proposed", REATTACKED: "Re-attacked", BYPASS_CLOSED: "Bypass closed", STILL_VULNERABLE: "Still vulnerable" };
 function Metric({ label, value, tone = "ink" }: { label: string; value: string; tone?: "ink" | "danger" | "safe" }) { return <div className={`metric metric-${tone}`}><span>{label}</span><strong>{value}</strong></div>; }
@@ -13,7 +14,7 @@ function EvidenceMap({ attack, run }: { attack: AttackResult; run: ReturnType<ty
   return <div className="evidence-map">{run.construct.requiredEvidence.map((item) => { const retained = attack.retainedEvidenceIds.includes(item.id); return <div className="evidence-row" key={item.id}><span className={retained ? "evidence-dot retained" : "evidence-dot bypassed"}/><div><strong>{item.label}</strong><small>{retained ? "Human performance retained" : "Bypassed by AI"}</small></div><b>{toPercent(item.weight)}</b></div>; })}<div className="formula">Bypass = 100% − retained weights ({toPercent(attack.humanEvidenceRetained)}) = <strong>{toPercent(attack.bypassScore)}</strong></div></div>;
 }
 export default function GuardianApp() {
-  const [input, setInput] = useState<AssessmentInput>(GOLDEN_DEMO); const [run, setRun] = useState<ReturnType<typeof runGuardian> | null>(null); const [error, setError] = useState<string | null>(null); const [running, setRunning] = useState(false);
+  const [input, setInput] = useState<AssessmentInput>(GOLDEN_DEMO); const [selectedExample, setSelectedExample] = useState<AssessmentExampleId | "custom">("golden-demo"); const [run, setRun] = useState<ReturnType<typeof runGuardian> | null>(null); const [error, setError] = useState<string | null>(null); const [running, setRunning] = useState(false);
   const vulnerable = useMemo(() => run?.successfulAttack?.bypassedEvidenceIds.map((id) => run.construct.requiredEvidence.find((e) => e.id === id)?.label).filter(Boolean) ?? [], [run]);
   async function attack() {
     setError(null); setRunning(true); setRun(null);
@@ -28,13 +29,24 @@ export default function GuardianApp() {
       catch (workflowError) { setError(workflowError instanceof Error ? workflowError.message : "The workflow failed."); }
     } finally { setRunning(false); }
   }
+  function loadExample(id: AssessmentExampleId) {
+    setInput(getAssessmentExample(id));
+    setSelectedExample(id);
+    setRun(null);
+    setError(null);
+  }
+  function editInput(field: keyof AssessmentInput, value: string) {
+    setInput((current) => ({ ...current, [field]: value }));
+    setSelectedExample("custom");
+  }
   return <main><header className="topbar"><div className="brand"><span className="brand-mark"><ShieldCheck size={19}/></span><div><b>Construct Guardian</b><small>Assessment Attack Agent</small></div></div><span className="mvp-tag">WORKING MVP</span></header>
     <section className="intro"><p className="eyebrow">RED-TEAM THE ASSESSMENT, NOT THE STUDENT</p><h1>Can AI earn the grade<br/>without proving the learning?</h1><p>Model the intended human evidence, attack the task, apply the smallest repair, and re-run the exact same attack.</p></section>
-    <div className="workspace"><section className="input-panel"><div className="panel-title"><span>01</span><div><h2>Assessment input</h2><p>Golden Demo is loaded and ready.</p></div></div>
-      <label>Learning Outcome<Textarea value={input.learningOutcome} onChange={(e) => setInput({...input, learningOutcome:e.target.value})}/></label>
-      <label>Assignment Prompt<Textarea value={input.assignmentPrompt} onChange={(e) => setInput({...input, assignmentPrompt:e.target.value})}/></label>
-      <label>Rubric<Textarea className="rubric" value={input.rubric} onChange={(e) => setInput({...input, rubric:e.target.value})}/></label>
-      <div className="input-actions"><Button variant="ghost" onClick={() => {setInput(GOLDEN_DEMO);setRun(null);}}><RotateCcw/> Reset demo</Button><Button className="attack-button" onClick={attack} disabled={running}><Swords/>{running ? "ATTACKING…" : "ATTACK ASSESSMENT"}</Button></div>
+    <div className="workspace"><section className="input-panel"><div className="panel-title"><span>01</span><div><h2>Assessment input</h2><p>{selectedExample === "custom" ? "Custom edits are loaded." : `${ASSESSMENT_EXAMPLES.find((example) => example.id === selectedExample)?.name} is loaded and ready.`}</p></div></div>
+      <label className="example-selector">Try an example<select aria-label="Try an example" value={selectedExample} onChange={(event) => loadExample(event.target.value as AssessmentExampleId)}><option value="custom" disabled>Custom edits</option>{ASSESSMENT_EXAMPLES.map((example) => <option key={example.id} value={example.id}>{example.name}</option>)}</select></label>
+      <label>Learning Outcome<Textarea value={input.learningOutcome} onChange={(e) => editInput("learningOutcome", e.target.value)}/></label>
+      <label>Assignment Prompt<Textarea value={input.assignmentPrompt} onChange={(e) => editInput("assignmentPrompt", e.target.value)}/></label>
+      <label>Rubric<Textarea className="rubric" value={input.rubric} onChange={(e) => editInput("rubric", e.target.value)}/></label>
+      <div className="input-actions"><Button variant="ghost" onClick={() => loadExample("golden-demo")}><RotateCcw/> Reset demo</Button><Button className="attack-button" onClick={attack} disabled={running}><Swords/>{running ? "ATTACKING…" : "ATTACK ASSESSMENT"}</Button></div>
       {error && <div className="error"><AlertTriangle size={18}/><div><b>Workflow failed</b><p>{error}</p></div></div>}
     </section><section className={`results-panel ${run ? "has-results" : ""}`}>
       {!run && !running && <div className="empty-state"><Swords size={42}/><h2>Ready to attack</h2><p>The system will run all seven stages and expose every calculation.</p></div>}
