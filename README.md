@@ -1,87 +1,36 @@
+
+
 # Construct Guardian — Assessment Attack Agent
 
-Construct Guardian is a **pre-deployment assessment validity stress-testing
-tool** for teachers and course designers. It is used **before an assessment is
-given to students**, so the teacher can review and strengthen the assessment
-before releasing it.
+**Can AI earn the grade without demonstrating the learning?**
 
-The primary inputs are:
+Construct Guardian is a **pre-deployment assessment validity stress-testing agent** for teachers, course designers, and assessment teams.
 
-- Learning Outcome
-- Assignment Prompt
-- Rubric
+It is used **before an assessment is released to students**, so the instructor can examine whether the task still produces credible learner-originated evidence when generative AI can participate in completing the work.
 
-From these inputs, Construct Guardian models the intended construct—the
-capability the assessment is intended to measure—and the human evidence needed
-to support that construct. It then adversarially stress-tests whether
-AI-assisted strategies can satisfy the assessment while bypassing the required
-human evidence. When it detects a Construct Bypass, it proposes the smallest
-evidence-targeted repair and re-runs the exact same successful exploit against
-the repaired assessment.
+Instead of asking:
 
-## Construct Bypass
+> Did the student use AI?
 
-**Construct Bypass** is a product-specific operational term:
+Construct Guardian asks:
 
-> A condition in which an assessment can be successfully completed, often with
-> AI assistance, while bypassing the human evidence required to support the
-> intended learning construct.
+> Can an AI-assisted strategy satisfy the assignment and rubric while bypassing the learner-originated evidence the assessment was supposed to measure?
 
-Construct Guardian does not present Construct Bypass as an established
-psychometric term.
+The system models the intended construct, attacks the assessment with plausible AI-assisted completion strategies, identifies Construct Bypass, proposes the smallest evidence-targeted repair, and then re-runs the exact same successful exploit against the repaired assessment.
 
-## Intended workflow
+---
 
-`Learning Outcome + Assignment + Rubric → Construct & Human Evidence Model → Adversarial Assessment Stress Test → Construct Bypass Detection → Interactive Validity Report → Smallest Repair → Exact Re-Attack → Teacher Review → Deploy to Students`
+## Why this matters
 
-The teacher remains the decision-maker and reviews the strengthened assessment
-before it is deployed to students.
+Generative AI can now produce polished assignments that score highly against conventional rubrics.
 
-## Interactive assessment-validity report
+But a high-quality submission does not necessarily mean the learner demonstrated the intended skill.
 
-The primary output is an **interactive assessment-validity report inside the
-application**. It is not a chatbot conversation and is not merely a
-downloadable file. The report contains:
+An assessment may still appear rigorous while allowing AI to perform the very reasoning, evidence selection, interpretation, or justification that the course intended to measure.
 
-1. **Assessment Overview**
-   - Learning Outcome
-   - Assignment
-   - Rubric
-2. **Intended Construct**
-   - The capability the assessment is intended to measure
-3. **Required Human Evidence**
-   - Observable evidence that must originate from the learner
-   - Evidence weights and mappings where relevant
-4. **Adversarial Stress-Test Results**
-   - AI-assisted attack strategies tested
-   - Simulated submission quality
-   - Human evidence bypassed
-   - Whether a Construct Bypass was found
-5. **Construct Bypass Analysis**
-   - Exact vulnerable evidence
-   - Why the assessment can still appear successful
-   - Where the validity inference breaks
-6. **Smallest Repair**
-   - Repair mechanism
-   - Repair text
-   - Why it matches the lost evidence
-   - Why it is minimal
-   - Added student burden
-7. **Exact Re-Attack Result**
-   - The same successful exploit
-   - Before/after outcome
-   - Whether the exploit was blocked or remains viable
-8. **Trace / Why this result**
-   - Construct model
-   - Evidence mapping
-   - Attack identity
-   - Deterministic calculations
-   - Repair decision
-   - Re-attack outcome
+Construct Guardian helps instructors test that risk **before the assessment is deployed**.
 
-## What the current MVP is not
-
-The current MVP is not:
+It is not:
 
 - an AI detector
 - a plagiarism checker
@@ -89,147 +38,443 @@ The current MVP is not:
 - a post-submission student-answer analyzer
 - a generic teacher chatbot
 
-Future versions may support file upload and automatic extraction, downloadable
-revised assessments, and PDF/report export. These capabilities are **not
-required for the current MVP**.
+It is an **assessment validity stress test**.
 
-Scope lock: no authentication, database, dashboards, integrations, or speculative features.
+---
 
-## Run locally
+## Core concept: Construct Bypass
+
+**Construct Bypass** is a product-specific operational term:
+
+> A condition in which an assessment can be successfully completed, often with AI assistance, while bypassing the human evidence required to support the intended learning construct.
+
+Construct Guardian does not present Construct Bypass as an established psychometric term.
+
+The system makes bypass visible by separating:
+
+- **Submission Quality**
+- **Human Evidence Retained**
+- **Bypass Score**
+
+This prevents a polished artifact from being mistaken for evidence of learning.
+
+---
+
+## Intended workflow
+
+`Learning Outcome + Assignment + Rubric → Construct & Human Evidence Model → Adversarial Assessment Stress Test → Construct Bypass Detection → Smallest Repair → Exact Re-Attack → Final Validity Result`
+
+The teacher remains the decision-maker and reviews the strengthened assessment before it is deployed to students.
+
+---
+
+## How it works
+
+### 1. Input received
+
+The instructor provides:
+
+- Learning Outcome
+- Assignment Prompt
+- Rubric
+
+### 2. Construct modeled
+
+The **Construct Analyst** identifies:
+
+- the intended construct
+- required learner evidence
+- construct-bearing task steps
+- evidence weights
+
+### 3. Attack executed
+
+The **Assessment Attacker** generates multiple plausible AI-assisted completion strategies.
+
+Examples include:
+
+- preparation assistance
+- partial reasoning substitution
+- near-total AI completion
+
+### 4. Submission quality evaluated
+
+The **Quality Evaluator** evaluates the simulated submission against the rubric using structured criterion-level outputs.
+
+The deterministic Guardian Engine calculates the final weighted quality score.
+
+### 5. Construct bypass evaluated
+
+The Guardian Engine calculates how much learner-originated evidence remains.
+
+It determines:
+
+- submission quality
+- retained human evidence
+- bypass score
+- whether configured thresholds are crossed
+
+If both quality and bypass thresholds are crossed, the system reports:
+
+**CONSTRUCT BYPASS FOUND**
+
+### 6. Smallest repair proposed
+
+The **Repair Agent** identifies the evidence that was lost and proposes the smallest targeted modification that can restore an attributable learner sample.
+
+The goal is not to redesign the whole assessment.
+
+The repair is tied directly to the bypassed evidence.
+
+### 7. Exact strategy re-attack
+
+The system re-runs the **same successful attack strategy** against the repaired assessment.
+
+No easier or different attack is substituted.
+
+### 8. Final result
+
+If that exact exploit can no longer complete the protected learner-originated requirement:
+
+**BYPASS CLOSED**
+
+Otherwise:
+
+**STILL VULNERABLE**
+
+---
+
+## Interactive assessment-validity report
+
+The primary output is an **interactive validity report inside the application**.
+
+It includes:
+
+1. Assessment Overview
+2. Intended Construct
+3. Required Human Evidence
+4. Attack Strategies Tested
+5. Submission Quality
+6. Human Evidence Retained
+7. Construct Bypass Analysis
+8. Smallest Repair
+9. Exact Re-Attack Result
+10. Full Trace / Why This Result
+
+The trace keeps the final decision auditable by showing the construct model, evidence mapping, attack identity, deterministic calculations, repair decision, and re-attack outcome.
+
+---
+
+## Golden Demo
+
+The Golden Demo uses a persuasive campaign analysis task.
+
+The assessment requires students to:
+
+- identify persuasive strategies
+- select textual evidence
+- justify the evidence–strategy relationship
+- consider an alternative interpretation
+
+A near-total AI completion strategy produces:
+
+- **Submission Quality: 94%**
+- **Human Evidence Retained: 0%**
+- **Bypass Score: 100%**
+
+Result:
+
+**CONSTRUCT BYPASS FOUND**
+
+Construct Guardian then proposes one bounded repair:
+
+> After submission, complete one 8-minute in-class response to a newly supplied campaign excerpt: identify one strategy, select one quotation, justify the connection, and note one plausible alternative reading.
+
+The exact `full-generation` strategy is then re-run.
+
+It can still generate the original written submission, but it cannot complete the protected learner-originated in-class response.
+
+Result:
+
+**BYPASS CLOSED**
+
+The original evidence map and bypass arithmetic remain traceable rather than being artificially reduced after repair.
+
+---
+
+## Example presets
+
+Construct Guardian currently includes three ready-to-run examples.
+
+### Golden Demo
+Persuasive campaign analysis.
+
+### Pragmatic Meaning Analysis
+Focuses on:
+
+- implied meaning
+- linguistic cues
+- contextual reasoning
+- evidence-based interpretation
+
+### Statistical Interpretation
+Focuses on:
+
+- quantitative result interpretation
+- evidence-based conclusions
+- inferential judgment
+- limitations
+
+These examples demonstrate that the workflow is not tied to a single subject area.
+
+---
+
+## Architecture
+
+Construct Guardian uses a hybrid architecture that separates **model-driven reasoning** from **deterministic validity decisions**.
+
+### Strands-powered stages
+
+The following stages are providerized through Strands Agents with Amazon Bedrock support:
+
+- Construct Analyst
+- Assessment Attacker
+- Quality Evaluator
+- Repair Agent
+
+Each stage produces structured, schema-validated output.
+
+### Deterministic Guardian Engine
+
+The Guardian Engine owns the decisions that should not depend on model judgment:
+
+- evidence-weight arithmetic
+- retained-human-evidence calculation
+- bypass scoring
+- thresholds
+- workflow state
+- illegal transition guards
+- attack identity
+- exact-strategy re-attack
+- human-only requirement handling
+- final bypass status
+
+**AI generates and reasons; the engine verifies and decides.**
+
+The LLM does not control the final bypass calculation.
+
+---
+
+## Architecture Diagram
+
+![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
+
+> If the diagram is stored under a different path, update the image path above before submission.
+
+---
+
+## Technology
+
+- Next.js
+- React
+- TypeScript
+- Strands Agents SDK
+- Amazon Bedrock
+- Zod structured validation
+- Deterministic Guardian Engine
+- OpenTelemetry-compatible observability adapter
+
+---
+
+## Observability
+
+Construct Guardian includes a server-side observability adapter for tracing the workflow across stages such as:
+
+- construct analysis
+- assessment attack
+- quality evaluation
+- construct bypass evaluation
+- repair proposal
+- exact-strategy re-attack
+- final outcome
+
+The adapter is designed to support AgentCore-compatible observability without making telemetry failures affect product behavior.
+
+Raw prompts, raw submissions, credentials, and sensitive runtime details are not included in trace metadata.
+
+> Live AgentCore export should only be claimed when the corresponding runtime configuration has been verified.
+
+---
+
+## Reliability and fallback behavior
+
+Each AI-powered stage has a deterministic fallback.
+
+If Amazon Bedrock is unavailable or runtime credentials are not configured, the system remains usable and exposes the fallback source in the trace rather than silently pretending that a live model was used.
+
+This keeps runtime provenance visible.
+
+---
+
+## Workflow state machine
+
+```text
+INGESTED
+  ↓
+CONSTRUCT_MODELED
+  ↓
+ATTACK_EXECUTED
+  ↓
+BYPASS_CONFIRMED / NO_BYPASS
+  ↓
+REPAIR_PROPOSED
+  ↓
+REATTACKED
+  ↓
+BYPASS_CLOSED / STILL_VULNERABLE
+````
+
+Illegal transitions are guarded by deterministic workflow rules.
+
+---
+
+## Design principles
+
+* Pre-deployment rather than post-submission
+* Evidence-centered rather than detector-centered
+* Minimal repair rather than complete redesign
+* Exact-strategy verification
+* Deterministic scoring and thresholds
+* Transparent provenance
+* Structured model outputs
+* Graceful fallback behavior
+* Teacher remains the final decision-maker
+
+---
+
+## Live Demo
+
+Construct Guardian is available as a live interactive application:
+
+[https://construct-guardian-assessment-agent.abuosama147258.chatgpt.site/](https://construct-guardian-assessment-agent.abuosama147258.chatgpt.site/)
+
+---
+
+## Demo Video
+
+Final demo video link will be added before submission.
+
+---
+
+## Running locally
+
+### Requirements
+
+* Node.js 20+
+* AWS credentials available through the standard AWS credential provider chain
+* Amazon Bedrock access in the configured region
+
+### Environment
+
+Copy:
+
+```bash
+cp .env.example .env.local
+```
+
+Default configuration:
+
+```env
+AWS_REGION=us-east-1
+BEDROCK_MODEL_ID=global.anthropic.claude-sonnet-4-6
+```
+
+Do not hard-code AWS credentials.
+
+### Install
+
+```bash
+npm install
+```
+
+### Run
 
 ```bash
 npm run dev
 ```
 
-Run the automated core tests with `npm test`.
+### Test
 
-## Implemented MVP architecture
-
-- `lib/guardian.ts`: typed contracts, construct model, three attack strategies,
-  deterministic scoring, repair, exact-strategy re-attack, and guarded state machine.
-- `app/guardian-app.tsx`: one-page working surface with Golden Demo, Before/After,
-  failures, and a complete trace panel.
-- `tests/guardian.test.ts`: deterministic core and orchestration tests.
-
-The Construct Analyst now uses a server-side Strands Agent with Amazon Bedrock
-and validated structured output. It falls back automatically to the deterministic
-analyst and records provenance in the existing trace. Attack, scoring, repair,
-and re-attack stages remain deterministic simulations.
-
-Copy `.env.example` to `.env.local` and provide AWS credentials through the
-standard AWS credential chain. `BEDROCK_MODEL_ID` changes the Bedrock model
-without modifying domain logic.
-
-## Starter details
-
-A clean full-stack starter running on
-[vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and
-Drizzle support.
-
-## Prerequisites
-
-- Node.js `>=22.13.0`
-- Linux with `flock`, `curl`, and GNU `timeout`
-
-## Sites Lifecycle
-
-The Sites lifecycle CLI runs the locked dependency install before returning this checkout. Edit the source under `app/`, then checkpoint when a coherent milestone is ready to inspect or share. The remote Sites builder runs `npm run build` against the pushed commit. Do not repeat install or build as a normal pre-checkpoint step.
-
-This starter does not use `wrangler.jsonc`.
-
-`install:ci` is intentionally a single, non-retrying `npm ci`. It refuses a concurrent install for the same project, consumes a matching image-seeded npm cache with `--prefer-offline` while retaining registry fallback for a missing cache object, otherwise downloads and verifies the complete vinext tarball recorded in `package-lock.json`, limits npm to one socket, and terminates a stalled install. `build` applies a short timeout. These helpers target Linux and use GNU `timeout`; they are not native macOS scripts.
-
-Scripts that need writable project-scoped home, npm, XDG, and temporary paths use `scripts/sites-env.sh`. The `dev` and `start` scripts honor the caller's runtime environment and keep Wrangler logs inside the checkout. The generated `.sites-runtime/` directory is disposable and ignored by Git.
-
-## Included Shape
-
-- edit site code under `app/`
-- `app/chatgpt-auth.ts` provides optional dispatch-owned ChatGPT sign-in helpers
-- `.openai/hosting.json` declares optional Sites D1 and R2 bindings
-- `vite.config.ts` simulates declared bindings for local development
-- `db/index.ts` reads the D1 binding from the Cloudflare Worker environment
-- `db/schema.ts` starts intentionally empty
-- `examples/d1/` contains an optional D1 example surface
-- `drizzle.config.ts` supports local migration generation when needed
-
-## Workspace Auth Headers
-
-OpenAI workspace sites can read the current user's email from
-`oai-authenticated-user-email`.
-
-SIWC-authenticated workspace sites may also receive
-`oai-authenticated-user-full-name` when the user's SIWC profile has a non-empty
-`name` claim. The full-name value is percent-encoded UTF-8 and is accompanied by
-`oai-authenticated-user-full-name-encoding: percent-encoded-utf-8`.
-
-Treat the full name as optional and fall back to email when it is absent:
-
-```tsx
-import { headers } from "next/headers";
-
-export default async function Home() {
-  const requestHeaders = await headers();
-  const email = requestHeaders.get("oai-authenticated-user-email");
-  const encodedFullName = requestHeaders.get("oai-authenticated-user-full-name");
-  const fullName =
-    encodedFullName &&
-    requestHeaders.get("oai-authenticated-user-full-name-encoding") ===
-      "percent-encoded-utf-8"
-      ? decodeURIComponent(encodedFullName)
-      : null;
-
-  const displayName = fullName ?? email;
-  // ...
-}
+```bash
+npm test
 ```
 
-## Optional Dispatch-Owned ChatGPT Sign-In
+### Lint
 
-Import the ready-to-use helpers from `app/chatgpt-auth.ts` when the site needs
-optional or required ChatGPT sign-in:
+```bash
+npm run lint
+```
 
-- Use `getChatGPTUser()` for optional signed-in UI.
-- Use `requireChatGPTUser(returnTo)` for server-rendered pages that should send
-  anonymous visitors through Sign in with ChatGPT.
-- In a Server Component, start sign-in with
-  `<a href={chatGPTSignInPath(returnTo)} target="_top">`. The auth helper
-  module is server-only; do not import it into a Client Component.
-- Do not use `fetch`, XHR, a client-side router, or a framework link that can
-  prefetch the sign-in route. SIWC must start as a top-level navigation.
-- Never request the AuthAPI authorization endpoint directly. The dispatch-owned
-  `/signin-with-chatgpt` route must start the SIWC flow.
-- Use `chatGPTSignOutPath(returnTo)` for browser sign-out links or actions.
-- Pass a same-origin relative `returnTo` path for the destination after sign-in
-  or sign-out. The helper validates and safely encodes it.
-- Mark protected pages with `export const dynamic = "force-dynamic"` because
-  they depend on per-request identity headers.
+### Production build
 
-Dispatch owns `/signin-with-chatgpt`, `/signout-with-chatgpt`, `/callback`, the
-OAuth cookies, and identity header injection. Do not implement app routes for
-those reserved paths. Routes that do not import and call the helper remain
-anonymous-compatible.
+```bash
+npm run build
+```
 
-SIWC establishes identity only; it does not prove workspace membership. Use the
-Sites hosting platform's access policy controls for workspace-wide restrictions,
-or enforce explicit server-side membership or allowlist checks.
+---
 
-Use SIWC for account pages, user-specific dashboards, saved records, and write
-actions tied to the current ChatGPT user. Leave public content anonymous.
+## Verification status
 
-## Diagnostic Commands
+Current verified application state:
 
-- `npm run install:ci`: perform the one bounded lockfile install
-- `npm run dev`: start the Vite/Vinext development server
-- `npm run build`: build the deployable Sites artifact
-- `npm run start`: start the built Vinext application
-- `npm test`: build and verify the rendered development-preview metadata
-- `npm run db:generate`: generate Drizzle migrations after schema changes
+* **71 tests passing**
+* **ESLint passing**
+* **Production build passing**
+* **Working tree clean**
 
-Use build commands for targeted diagnosis after a remote failure, not as part of the normal checkpoint path.
+Latest verified application commit:
 
-The timeout defaults can be overridden for a controlled canary with `SITES_INSTALL_TIMEOUT`, `SITES_INSTALL_KILL_AFTER`, `SITES_BUILD_TIMEOUT`, and `SITES_BUILD_KILL_AFTER`. A timeout fails the command; the helpers never retry an unchanged install or build.
+`a7bed8c247ededee521697cbaf93b2980fca7af7`
 
-## Learn More
+---
 
-- [vinext Documentation](https://github.com/cloudflare/vinext)
-- [Drizzle D1 Guide](https://orm.drizzle.team/docs/get-started/d1-new)
+## Hackathon Track
+
+**Professional Agents**
+
+Construct Guardian helps teachers and course designers perform a judgment-heavy professional task more systematically: evaluating whether an assessment still measures the intended learning when AI can participate in task completion.
+
+---
+
+## Current AWS status
+
+The application supports Amazon Bedrock inference through the Strands-powered provider architecture.
+docs/construct-guardian-architecture.png
+![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
+
+
+Final live Bedrock verification will be updated here after the pending AWS service quota request is approved.
+
+Until then, the application transparently falls back to deterministic providers when Bedrock credentials or runtime quota are unavailable.
+
+---
+
+## Repository
+
+GitHub repository:
+
+[https://github.com/humanaixlab/construct-guardian](https://github.com/humanaixlab/construct-guardian)
+
+The repository will be made public before final hackathon submission.
+
+---
+
+## License
+
+MIT
+
+```
+
+
+غير ذلك، هذه النسخة هي التي أعتمدها بدل README الحالي كله.
+```
