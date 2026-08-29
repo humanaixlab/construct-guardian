@@ -267,7 +267,7 @@ The LLM does not control the final bypass calculation.
 
 ## Architecture Diagram
 
-![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
+![Construct Guardian Architecture](./construct-guardian-architecture.png)
 
 > If the diagram is stored under a different path, update the image path above before submission.
 
