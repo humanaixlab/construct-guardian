@@ -448,16 +448,24 @@ Construct Guardian helps teachers and course designers perform a judgment-heavy 
 
 ## Current AWS status
 
-The application supports Amazon Bedrock inference through the Strands-powered provider architecture.
+## Current AWS status
+
+Live Amazon Bedrock inference has been successfully verified in `us-east-1` using Anthropic Claude Sonnet 4.6 through the global cross-region model profile.
+
+The live smoke test returned:
+
+`BEDROCK_OK`
+
+The application uses Strands-powered providers for AI reasoning stages, while the deterministic Guardian Engine retains control of evidence arithmetic, thresholds, workflow state, exact-strategy re-attack, and final bypass status.
+
+Deterministic fallback providers remain available for resilience when live model access is unavailable.The application supports Amazon Bedrock inference through the Strands-powered provider architecture.
 docs/construct-guardian-architecture.png
 ![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
 
 
-Final live Bedrock verification will be updated here after the pending AWS service quota request is approved.
+Live Amazon Bedrock inference has been successfully verified in `us-east-1` using Anthropic Claude Sonnet 4.6 through the global cross-region model profile.
 
-Until then, the application transparently falls back to deterministic providers when Bedrock credentials or runtime quota are unavailable.
-
----
+The live smoke test returned:
 
 ## Repository
 
