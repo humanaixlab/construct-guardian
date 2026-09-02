@@ -473,7 +473,6 @@ GitHub repository:
 
 [https://github.com/humanaixlab/construct-guardian](https://github.com/humanaixlab/construct-guardian)
 
-The repository will be made public before final hackathon submission.
 
 ---
 
