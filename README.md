@@ -357,7 +357,7 @@ Illegal transitions are guarded by deterministic workflow rules.
 
 Construct Guardian is available as a live interactive application:
 
-[https://constructguardian.humanaixlab.com](https://constructguardian.humanaixlab.com)
+![Construct Guardian Architecture](./construct-guardian-architecture.png)
 
 ---
 
