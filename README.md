@@ -1,5 +1,5 @@
 
-
+````markdown
 # Construct Guardian — Assessment Attack Agent
 
 **Can AI earn the grade without demonstrating the learning?**
@@ -207,9 +207,11 @@ The original evidence map and bypass arithmetic remain traceable rather than bei
 Construct Guardian currently includes three ready-to-run examples.
 
 ### Golden Demo
+
 Persuasive campaign analysis.
 
 ### Pragmatic Meaning Analysis
+
 Focuses on:
 
 - implied meaning
@@ -218,6 +220,7 @@ Focuses on:
 - evidence-based interpretation
 
 ### Statistical Interpretation
+
 Focuses on:
 
 - quantitative result interpretation
@@ -267,9 +270,7 @@ The LLM does not control the final bypass calculation.
 
 ## Architecture Diagram
 
-![Construct Guardian Architecture](./construct-guardian-architecture.png)
-
-> If the diagram is stored under a different path, update the image path above before submission.
+![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
 
 ---
 
@@ -356,7 +357,7 @@ Illegal transitions are guarded by deterministic workflow rules.
 
 Construct Guardian is available as a live interactive application:
 
-[https://construct-guardian-assessment-agent.abuosama147258.chatgpt.site/](https://construct-guardian-assessment-agent.abuosama147258.chatgpt.site/)
+[https://constructguardian.humanaixlab.com](https://constructguardian.humanaixlab.com)
 
 ---
 
@@ -427,7 +428,7 @@ npm run build
 
 Current verified application state:
 
-* **71 tests passing**
+* **87 tests passing**
 * **ESLint passing**
 * **Production build passing**
 * **Working tree clean**
@@ -448,8 +449,6 @@ Construct Guardian helps teachers and course designers perform a judgment-heavy 
 
 ## Current AWS status
 
-## Current AWS status
-
 Live Amazon Bedrock inference has been successfully verified in `us-east-1` using Anthropic Claude Sonnet 4.6 through the global cross-region model profile.
 
 The live smoke test returned:
@@ -458,21 +457,15 @@ The live smoke test returned:
 
 The application uses Strands-powered providers for AI reasoning stages, while the deterministic Guardian Engine retains control of evidence arithmetic, thresholds, workflow state, exact-strategy re-attack, and final bypass status.
 
-Deterministic fallback providers remain available for resilience when live model access is unavailable.The application supports Amazon Bedrock inference through the Strands-powered provider architecture.
-docs/construct-guardian-architecture.png
-![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
+Deterministic fallback providers remain available for resilience when live model access is unavailable.
 
-
-Live Amazon Bedrock inference has been successfully verified in `us-east-1` using Anthropic Claude Sonnet 4.6 through the global cross-region model profile.
-
-The live smoke test returned:
+---
 
 ## Repository
 
 GitHub repository:
 
 [https://github.com/humanaixlab/construct-guardian](https://github.com/humanaixlab/construct-guardian)
-
 
 ---
 
@@ -481,6 +474,5 @@ GitHub repository:
 MIT
 
 ```
-
 
 ```
