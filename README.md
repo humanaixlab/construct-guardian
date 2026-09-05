@@ -272,6 +272,7 @@ The LLM does not control the final bypass calculation.
 
 ![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
 
+
 ---
 
 ## Technology
