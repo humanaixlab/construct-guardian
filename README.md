@@ -472,8 +472,4 @@ GitHub repository:
 
 ## License
 
-MIT
-
-```
-
-```
+Construct Guardian's original source code is released under the MIT License. Third-party libraries, SDKs, models, APIs, and cloud services remain subject to their respective licenses and terms of use.
