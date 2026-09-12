@@ -1,5 +1,4 @@
 
-````markdown
 # Construct Guardian — Assessment Attack Agent
 
 **Can AI earn the grade without demonstrating the learning?**
@@ -270,8 +269,7 @@ The LLM does not control the final bypass calculation.
 
 ## Architecture Diagram
 
-![Construct Guardian Architecture](./docs/construct-guardian-architecture.png)
-
+![Construct Guardian Architecture](./construct-guardian-architecture%20(2).png)
 
 ---
 
@@ -358,7 +356,8 @@ Illegal transitions are guarded by deterministic workflow rules.
 
 Construct Guardian is available as a live interactive application:
 
-![Construct Guardian Architecture](./construct-guardian-architecture.png)
+[![Construct Guardian Architecture](./construct-guardian-architecture.png)
+](https://constructguardian.humanaixlab.com)
 
 ---
 
