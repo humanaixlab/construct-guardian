@@ -362,7 +362,7 @@ https://constructguardian.humanaixlab.com
 
 ## Demo Video
 
-[Watch the demo video](https://www.youtube.com/watch?v=TbC61No1aDo)
+[Watch the demo video](https://youtu.be/TbC6lNo1aDo)
 
 ---
 
